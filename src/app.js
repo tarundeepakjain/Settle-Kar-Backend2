@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import { errorHandler } from "./middleware/errorHandler.js";
+import group from "./routes/group.js";
+import dotenv from "dotenv";
 
 const app = express();
 
@@ -41,6 +43,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
+app.use('/group',group);
 
 /* =======================
    Error Handler (LAST)
