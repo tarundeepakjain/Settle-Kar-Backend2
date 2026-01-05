@@ -1,9 +1,10 @@
-import { supabase } from "../utils/supabaseClient";
+import { supabase } from "../utils/supabaseClient.js";
 
-exports.addPersonalTransaction = async(req) =>{
+export const addPersonalTransaction = async(req) =>{
     const {error} = await supabase.from('Transactions').insert({
         description:req.description,
-        created_by:req.created_by,
+        created_by:req.userid,
+        amount:req.amount,
     })
     if(error) throw error;
 };

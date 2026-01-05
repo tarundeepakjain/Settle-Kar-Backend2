@@ -3,6 +3,7 @@ import cors from "cors";
 import { errorHandler } from "./middleware/errorHandler.js";
 import group from "./routes/group.js";
 import dotenv from "dotenv";
+import transaction from "./routes/transaction.js";
 
 const app = express();
 
@@ -44,7 +45,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
 app.use('/group',group);
-
+app.use('/transaction',transaction);
 /* =======================
    Error Handler (LAST)
 ======================= */
