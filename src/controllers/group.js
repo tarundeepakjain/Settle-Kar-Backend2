@@ -24,7 +24,7 @@ class GroupController{
     return inviteId;
   };
 
- createGroup=async(req,res)=>{
+ createGroup=async(req,res,next)=>{
     try {
         const {group_name}=req.body;
         const created_by = req.user.id;
@@ -82,6 +82,56 @@ if (memberError) throw memberError;
     } catch (error) {
         next(error);
     }
+}
+joinGroup=async(req,res,next)=>{
+  try {
+    const {invite_id}=req.body;
+    if(!invite_id){
+      return res.status(400).json({
+        "message":"invite id is required"
+      });
+    }
+    const user_id=req.user.id;
+    const {data:group,error} =await supabase
+    .from("Groups")
+    .select("id")
+    .eq("invite_id",invite_id)
+    .maybeSingle();
+if(!group){
+  return res.status(404).json({
+        "message":"no group found"
+      });
+}
+if(error) throw error;
+const {data:already,existerror}=await supabase
+.from("Group_members")
+.select("id")
+.eq("group_id",group.id)
+.eq("user_id",user_id)
+.maybeSingle();
+if(existerror) throw existerror;
+if(already){
+  return res.status(400).json({
+    "message":"User already in group"
+  });
+}
+ const { error: memberError } = await supabase
+    .from("Group_members")
+    .insert([
+      {
+        group_id: group.id,
+        user_id:user_id,
+        role: "member",
+        net_balance: 0
+      }
+    ]);
+    if(memberError) throw memberError;
+    return res.status(201).json({
+      "message":"succesfully joined the group"
+    })
+  } catch (error) {
+    next(error);
+  }
 }
    };
 

@@ -5,10 +5,7 @@ export const Authentication= async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Missing or invalid authorization header"
-      });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const token = authHeader.split(" ")[1];
@@ -16,17 +13,12 @@ export const Authentication= async (req, res, next) => {
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized"
-      });
+      return res.status(401).json({ message: "Invalid token" });
     }
 
-    // ✅ trusted user
     req.user = user;
-    next();
-
+    next(); // ✅ REQUIRED
   } catch (err) {
-    next(err);
+    next(err); // ✅ REQUIRED
   }
 };
