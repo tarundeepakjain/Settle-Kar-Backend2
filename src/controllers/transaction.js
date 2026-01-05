@@ -1,4 +1,4 @@
-import {addPersonalTransactionService,getTransactionsService} from "../services/transaction.js"
+import {addPersonalTransactionService,getTransactionsService,deleteTransactionService} from "../services/transaction.js"
 
 class TransactionController{
     addPersonalTransaction = async(req,res,next)=>{
@@ -30,7 +30,16 @@ class TransactionController{
             description: t.description || "",
             date: t.created_at,
             }));
-            res.status(201).json(expenses);
+            res.status(200).json(expenses);
+        }catch(error){
+            next(error);
+        }
+    };
+    deleteTransaction = async(req,res,next)=>{
+        try{
+            const tid=req.params.tid;
+            await deleteTransactionService(tid);
+            res.status(200).json({message:"Transaction deleted successfully."})
         }catch(error){
             next(error);
         }

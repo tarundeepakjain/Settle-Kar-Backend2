@@ -20,3 +20,14 @@ export const getTransactionsService = async(userId) =>{
     return data;
 };
 
+export const deleteTransactionService = async(tid) =>{
+    const {data,error} = await supabase
+    .from('Transactions')
+    .delete()
+    .eq('id',tid);
+    if(error) throw error;
+};
+
+export const addGroupTransaction = async(req)=>{
+    
+};
