@@ -26,9 +26,9 @@ class GroupController{
 
  createGroup=async(req,res,next)=>{
     try {
-        const {group_name}=req.body;
+        const {name,description}=req.body;
         const created_by = req.user.id;
-        if (!group_name ) {
+        if (!name ) {
         return res.status(400).json({
           message: "group_name and created_by are required"
         });
@@ -36,7 +36,7 @@ class GroupController{
       const { data: existingGroup } = await supabase
   .from("Groups")
   .select("id")
-  .eq("group_name", group_name)
+  .eq("group_name", name)
   .eq("created_by", created_by)
   .maybeSingle();
 
@@ -52,7 +52,8 @@ if (existingGroup) {
         .from("Groups")
         .insert([
           {
-            group_name,
+            group_name:name,
+            description,
             created_by,
             invite_id
           }
@@ -85,8 +86,8 @@ if (memberError) throw memberError;
 }
 joinGroup=async(req,res,next)=>{
   try {
-    const {invite_id}=req.body;
-    if(!invite_id){
+    const {inviteid}=req.body;
+    if(!inviteid){
       return res.status(400).json({
         "message":"invite id is required"
       });
@@ -95,7 +96,7 @@ joinGroup=async(req,res,next)=>{
     const {data:group,error} =await supabase
     .from("Groups")
     .select("id")
-    .eq("invite_id",invite_id)
+    .eq("invite_id",inviteid)
     .maybeSingle();
 if(!group){
   return res.status(404).json({
@@ -129,6 +130,63 @@ if(already){
     return res.status(201).json({
       "message":"succesfully joined the group"
     })
+  } catch (error) {
+    next(error);
+  }
+}
+
+fetchAllGroups=async(req,res,next)=>{
+  try {
+    const user_id=req.user.id;
+    const { data:groups, error } = await supabase
+      .from("Group_members")
+      .select(`
+        role,
+        net_balance,
+        joined_at,
+        Groups (
+          id,
+          group_name,
+          invite_id,
+          created_by,
+          created_at,
+          Group_members ( id )
+        )
+      `)
+      .eq("user_id", user_id);
+  if(error) throw error;
+ 
+    return res.status(200).json({
+      "message":"Groups fetched",
+      groups
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+fetchGroup=async(req,res,next)=>{
+  try {
+    const groupId=req.params.groupId;
+    const user_id=req.user.id;
+      const { data:groups, error } = await supabase
+      .from("Group_members")
+      .select(`
+        Groups (
+          id,
+          group_name,
+          invite_id,
+          created_by,
+          created_at,
+          Group_members ( id )
+        )
+      `)
+      .eq("group_id", groupId);
+       if(error) throw error;
+ 
+    return res.status(200).json({
+      "message":"Groups fetched",
+      groups
+    });
   } catch (error) {
     next(error);
   }

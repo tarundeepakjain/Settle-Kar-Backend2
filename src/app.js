@@ -9,27 +9,25 @@ const app = express();
 /* =======================
    CORS Configuration
 ======================= */
-const allowedOrigins = [
-  process.env.FRONTEND_URL,      // Vercel frontend
-  "http://localhost:3000",
-  "http://localhost:5173",
-];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // allow Postman, curl, server-to-server
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        return callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // mobile apps send no origin
+    if (
+      origin.includes("localhost") ||
+      origin.includes("127.0.0.1") ||
+      origin.includes("192.168.") || // allow all local IPs
+      origin.startsWith("exp://")    // allow Expo dev client
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
 
 /* =======================
    Body Parsers
