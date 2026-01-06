@@ -1,5 +1,5 @@
 import { supabase } from "../utils/supabaseClient.js";
-
+import { validate as isUUID } from "uuid";
 export const addPersonalTransactionService = async(req) =>{
     const {error} = await supabase.from('Transactions').insert({
         description:req.description,
@@ -37,6 +37,9 @@ export const deleteFromTransactionService = async(tid) =>{
 };
 
 export const addGroupTransactionService = async(req,groupId,groupSize)=>{
+    if (!isUUID(req.paidById)) {
+  throw new Error(`Invalid paidById: ${req.paidById}`);
+}
     const {data:transactionData,error:transactionError} = await supabase
     .from('Transactions')
     .insert({
@@ -48,7 +51,10 @@ export const addGroupTransactionService = async(req,groupId,groupSize)=>{
     })
     .select()
     .single();
-
+   req.splitAmong = req.splitAmong
+  .filter(id => isUUID(id));
+  console.log("Split among",req.splitAmong);
+  console.log("Payer id:",req.paidById);
     if(transactionError) throw transactionError;
     const share = req.amount/req.splitAmong.length;
 
