@@ -21,10 +21,13 @@ class TransactionController{
     };
     addGroupTransaction = async(req,res,next)=>{
         try{
-            const groupId = req.params.groupId;
+           
             const groupSize = Number(req.params.groupSize);
-            await addGroupTransactionService(req.body,groupId,groupSize);
-            res.status(201).json({message:"Group Expense Added."});
+             const groupId = req.params.groupId;
+            console.log("group id:",groupId);
+            console.log("groupsize:",groupSize);
+            const expense=await addGroupTransactionService(req.body,groupId,groupSize);
+            res.status(201).json({message:"Group Expense Added."},expense);
         }catch(error){
             next(error);
         }
