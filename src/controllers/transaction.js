@@ -5,7 +5,7 @@ import {
     addGroupTransactionService,
     deleteGroupTransactionService
 } from "../services/transaction.js"
-
+import { supabase } from "../utils/supabaseClient.js";
 class TransactionController{
     addPersonalTransaction = async(req,res,next)=>{
         try{
@@ -50,9 +50,15 @@ class TransactionController{
     deleteTransaction = async(req,res,next)=>{
         try{
             const tid=req.params.tid;
+            const {data:userData,error:groupTransactionError} = await supabase
+            .from('Group_partial_transactions')
+            .delete()
+            .eq('transaction_id',tid)
+            .select();
+            
             const transactionData = await deleteFromTransactionService(tid);
             if(transactionData.isGroup){
-                await deleteGroupTransactionService(tid,transactionData.group_id);
+                await deleteGroupTransactionService(transactionData,userData);
             }
             res.status(200).json({message:"Transaction deleted successfully."})
         }catch(error){

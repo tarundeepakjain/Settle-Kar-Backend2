@@ -19,7 +19,7 @@ export const getTransactionsService = async(userId) =>{
     if (error) throw error;
     return data;
 };
-//Incomplete
+
 export const deleteFromTransactionService = async(tid) =>{
     const {data,error} = await supabase
     .from('Transactions')
@@ -117,19 +117,43 @@ export const addGroupTransactionService = async(req,groupId,groupSize)=>{
     }
 };
 
-export const deleteGroupTransactionService = async(tid,groupId) => {
-    const {data:userData,error:groupTransactionError} = await supabase
-    .from('Group_partial_transactions')
-    .delete()
-    .eq('transaction_id',tid)
-    .select();
-    
-    if(groupTransactionError) return groupTransactionError;
+export const deleteGroupTransactionService = async(transaction,userData) => {
+    const tid=transaction.id;
+    const groupId=transaction.group_id;
+
+    console.log(userData);
     
     if(!userData||userData.length===0){
+        // Fetch all group members
+        const { data: members, error: membersError } = await supabase
+            .from("Group_members")
+            .select("user_id, net_balance")
+            .eq("group_id", groupId);
+
+        if (membersError) throw membersError;
+
+        const splitAmount = transaction.amount / members.length;
+
+        for (const member of members) {
+            let rollback = splitAmount;
+
+            // payer had extra deduction earlier
+            if (member.user_id === transaction.created_by) {
+                rollback = splitAmount - transaction.amount;
+            }
+
+            const { error: updateError } = await supabase
+                .from("Group_members")
+                .update({
+                    net_balance: member.net_balance + rollback,
+                })
+                .eq("user_id", member.user_id)
+                .eq("group_id", groupId);
+
+            if (updateError) throw updateError;
+        }
         return;
     }
-
     for (const row of userData){
         const {user_id,to_pay_amount} = row;
         const { data: memberRow, error: fetchError } = await supabase
