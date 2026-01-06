@@ -174,3 +174,14 @@ export const deleteGroupTransactionService = async(transaction,userData) => {
         if (updateError) throw updateError;
     }
 };
+
+export const getGroupTransactionService = async(groupId)=>{
+    const {data,error} = await supabase
+    .from('Transactions')
+    .select('*')
+    .eq('group_id',groupId)
+    .order('created_at',{ascending:false});
+
+    if (error) throw error;
+    return data;
+};

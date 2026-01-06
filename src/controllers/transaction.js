@@ -3,7 +3,8 @@ import {
     getTransactionsService,
     deleteFromTransactionService,
     addGroupTransactionService,
-    deleteGroupTransactionService
+    deleteGroupTransactionService,
+    getGroupTransactionService
 } from "../services/transaction.js"
 import { supabase } from "../utils/supabaseClient.js";
 class TransactionController{
@@ -55,7 +56,7 @@ class TransactionController{
             .delete()
             .eq('transaction_id',tid)
             .select();
-            
+
             const transactionData = await deleteFromTransactionService(tid);
             if(transactionData.isGroup){
                 await deleteGroupTransactionService(transactionData,userData);
@@ -63,6 +64,18 @@ class TransactionController{
             res.status(200).json({message:"Transaction deleted successfully."})
         }catch(error){
             next(error);
+        }
+    };
+    getGroupTransaction = async(req,res,next)=>{
+        try{
+            const groupId=req.params.groupId;
+            const data = await getGroupTransactionService(groupId);
+            return res.status(200).json({
+            success: true,
+            data
+            });
+        }catch(error){
+            next(error)
         }
     };
 }
