@@ -19,15 +19,128 @@ export const getTransactionsService = async(userId) =>{
     if (error) throw error;
     return data;
 };
-
-export const deleteTransactionService = async(tid) =>{
+//Incomplete
+export const deleteFromTransactionService = async(tid) =>{
     const {data,error} = await supabase
     .from('Transactions')
     .delete()
-    .eq('id',tid);
+    .eq('id',tid)
+    .select();
+
     if(error) throw error;
+
+    if(!data){
+        console.log("Transaction not found.");
+        return;
+    }
+    return data[0];
 };
 
-export const addGroupTransaction = async(req)=>{
+export const addGroupTransactionService = async(req,groupId,groupSize)=>{
+    const {data:transactionData,error:transactionError} = await supabase
+    .from('Transactions')
+    .insert({
+        description:req.desc,
+        created_by:req.paidById,
+        amount:req.amount,
+        isGroup:true,
+        group_id:groupId,
+    })
+    .select()
+    .single();
+
+    if(transactionError) throw transactionError;
+    const share = req.amount/req.splitAmong.length;
+
+    // fetch payer balance
+    const { data: payerRow, error: payerFetchError } = await supabase
+    .from("Group_members")
+    .select("net_balance")
+    .eq("user_id", req.paidById)
+    .eq("group_id", groupId)
+    .single();
+    if (payerFetchError) throw payerFetchError;
+    // update payer balance
+    const { error: payerUpdateError } = await supabase
+    .from("Group_members")
+    .update({
+        net_balance: payerRow.net_balance + req.amount,
+    })
+    .eq("user_id", req.paidById)
+    .eq("group_id", groupId);
+    if (payerUpdateError) throw payerUpdateError;
+
+    for (const userId of req.splitAmong) {
+        const { data: row, error: fetchError } = await supabase
+            .from("Group_members")
+            .select("net_balance")
+            .eq("user_id", userId)
+            .eq("group_id", groupId)
+            .single();
+        if (fetchError) throw fetchError;
+        const { error: updateError } = await supabase
+            .from("Group_members")
+            .update({
+            net_balance: row.net_balance - share,
+            })
+            .eq("user_id", userId)
+            .eq("group_id", groupId);
+        if (updateError) throw updateError;
+    }
+
+    if(groupSize!==req.splitAmong.length){
+        for (const userId of req.splitAmong) {
+           const { error:partialTransactionError } = await supabase
+           .from('Group_partial_transactions')
+           .insert({ 
+            transaction_id: transactionData.id,
+            user_id: userId, 
+            to_pay_amount:share,
+            })
+            if(partialTransactionError) throw partialTransactionError;
+        }
+        const { error } = await supabase
+        .from('Group_partial_transactions')
+        .update({ 
+            to_pay_amount:share-req.amount,
+        })
+        .eq('user_id',req.paidById)
+        .eq('transaction_id', transactionData.id);
+
+        if(error) throw error;
+    }
+};
+
+export const deleteGroupTransactionService = async(tid,groupId) => {
+    const {data:userData,error:groupTransactionError} = await supabase
+    .from('Group_partial_transactions')
+    .delete()
+    .eq('transaction_id',tid)
+    .select();
     
+    if(groupTransactionError) return groupTransactionError;
+    
+    if(!userData||userData.length===0){
+        return;
+    }
+
+    for (const row of userData){
+        const {user_id,to_pay_amount} = row;
+        const { data: memberRow, error: fetchError } = await supabase
+            .from("Group_members")
+            .select("net_balance")
+            .eq("user_id", user_id)
+            .eq("group_id", groupId)
+            .single();
+
+        if (fetchError) throw fetchError;
+        const { error: updateError } = await supabase
+        .from("Group_members")
+        .update({
+            net_balance: memberRow.net_balance + to_pay_amount,
+        })
+        .eq("user_id", user_id)
+        .eq("group_id", groupId);
+        if (updateError) throw updateError;
+    }
 };

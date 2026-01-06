@@ -1,4 +1,10 @@
-import {addPersonalTransactionService,getTransactionsService,deleteTransactionService} from "../services/transaction.js"
+import {
+    addPersonalTransactionService,
+    getTransactionsService,
+    deleteFromTransactionService,
+    addGroupTransactionService,
+    deleteGroupTransactionService
+} from "../services/transaction.js"
 
 class TransactionController{
     addPersonalTransaction = async(req,res,next)=>{
@@ -15,7 +21,10 @@ class TransactionController{
     };
     addGroupTransaction = async(req,res,next)=>{
         try{
-
+            const groupId = req.params.groupId;
+            const groupSize = Number(req.params.groupSize);
+            await addGroupTransactionService(req.body,groupId,groupSize);
+            res.status(201).json({message:"Group Expense Added."});
         }catch(error){
             next(error);
         }
@@ -38,7 +47,10 @@ class TransactionController{
     deleteTransaction = async(req,res,next)=>{
         try{
             const tid=req.params.tid;
-            await deleteTransactionService(tid);
+            const transactionData = await deleteFromTransactionService(tid);
+            if(transactionData.isGroup){
+                await deleteGroupTransactionService(tid,transactionData.group_id);
+            }
             res.status(200).json({message:"Transaction deleted successfully."})
         }catch(error){
             next(error);
