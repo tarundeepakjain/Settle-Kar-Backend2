@@ -164,33 +164,60 @@ fetchAllGroups=async(req,res,next)=>{
     next(error);
   }
 }
-fetchGroup=async(req,res,next)=>{
+fetchGroup = async (req, res, next) => {
   try {
-    const groupId=req.params.groupId;
-    const user_id=req.user.id;
-      const { data:groups, error } = await supabase
+    const { groupId } = req.params;
+    const user_id = req.user.id;
+
+    // 1️⃣ Authorization
+    const { data: member } = await supabase
       .from("Group_members")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("user_id", user_id)
+      .maybeSingle();
+
+    if (!member) {
+      return res.status(403).json({
+        message: "You are not a member of this group",
+      });
+    }
+
+    // 2️⃣ Fetch group
+    const { data: group, error } = await supabase
+      .from("Groups")
       .select(`
-        Groups (
-          id,
-          group_name,
-          invite_id,
-          created_by,
-          created_at,
-          Group_members ( id )
+        id,
+        group_name,
+        description,
+        invite_id,
+        created_by,
+        created_at,
+        Group_members (
+          user_id,
+          role,
+          Profiles (
+            id,
+            name,
+            email
+          )
         )
       `)
-      .eq("group_id", groupId);
-       if(error) throw error;
- 
+      .eq("id", groupId)
+      .single();
+
+    if (error) throw error;
+
     return res.status(200).json({
-      "message":"Groups fetched",
-      groups
+      message: "Group fetched successfully",
+      group,
     });
+
   } catch (error) {
     next(error);
   }
-}
+};
+
    };
 
    export default new GroupController();
