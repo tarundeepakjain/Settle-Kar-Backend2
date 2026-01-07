@@ -1,1 +1,1 @@
-# Settle-Kar-Backend2
+# Settle-Kar-Backend-Supabase
