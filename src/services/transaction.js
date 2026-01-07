@@ -178,7 +178,11 @@ export const deleteGroupTransactionService = async(transaction,userData) => {
 export const getGroupTransactionService = async(groupId)=>{
     const {data,error} = await supabase
     .from('Transactions')
-    .select('*')
+    .select(`*,
+            Profiles(
+                name
+            )
+        `)
     .eq('group_id',groupId)
     .order('created_at',{ascending:false});
 

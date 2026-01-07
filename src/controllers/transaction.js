@@ -69,7 +69,16 @@ class TransactionController{
     getGroupTransaction = async(req,res,next)=>{
         try{
             const groupId=req.params.groupId;
-            const data = await getGroupTransactionService(groupId);
+            const txs = await getGroupTransactionService(groupId);
+            const data = txs.map(tx => ({
+            _id: tx.id,
+            description: tx.description,
+            amount: tx.amount,
+            paidBy: {
+                _id: tx.created_by,
+                name: tx.Profiles?.name || null
+            }
+            }));
             return res.status(200).json({
             success: true,
             data
