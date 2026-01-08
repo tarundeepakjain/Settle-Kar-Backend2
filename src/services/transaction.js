@@ -205,14 +205,14 @@ export const getUserGroupBalancesService = async (groupId, userId) => {
     if (tx.to_pay_id === userId) {
       const otherUser = tx.user_id;
       if (!balanceMap[otherUser]) balanceMap[otherUser] = 0;
-      balanceMap[otherUser] += amount;
+      balanceMap[otherUser] -= amount;
     }
 
     // Case 2: YOU owe other user
     if (tx.user_id === userId) {
       const otherUser = tx.to_pay_id;
       if (!balanceMap[otherUser]) balanceMap[otherUser] = 0;
-      balanceMap[otherUser] -= amount;
+      balanceMap[otherUser] += amount;
     }
   }
 
