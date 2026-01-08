@@ -4,7 +4,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import group from "./routes/group.js";
 import dotenv from "dotenv";
 import transaction from "./routes/transaction.js";
-
+import upload from "./routes/upload.js";
 const app = express();
 
 /* =======================
@@ -44,6 +44,7 @@ app.get("/health", (req, res) => {
 });
 app.use('/group',group);
 app.use('/transaction',transaction);
+app.use('/upload',upload);
 /* =======================
    Error Handler (LAST)
 ======================= */
