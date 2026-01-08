@@ -44,7 +44,7 @@ app.get("/health", (req, res) => {
 });
 app.use('/group',group);
 app.use('/transaction',transaction);
-app.use('/upload',upload);
+app.use('/bills',upload);
 /* =======================
    Error Handler (LAST)
 ======================= */
