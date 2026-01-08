@@ -56,7 +56,7 @@ export const addGroupTransactionService = async(req,groupId,groupSize)=>{
   console.log("Split among",req.splitAmong);
   console.log("Payer id:",req.paidById);
     if(transactionError) throw transactionError;
-    const share = req.amount/req.splitAmong.length;
+    const share = Number((req.amount / req.splitAmong.length).toFixed(2));
 
     // fetch payer balance
     const { data: payerRow, error: payerFetchError } = await supabase
@@ -94,68 +94,35 @@ export const addGroupTransactionService = async(req,groupId,groupSize)=>{
         if (updateError) throw updateError;
     }
 
-    if(groupSize!==req.splitAmong.length){
-        for (const userId of req.splitAmong) {
-           const { error:partialTransactionError } = await supabase
-           .from('Group_partial_transactions')
-           .insert({ 
-            transaction_id: transactionData.id,
-            user_id: userId, 
-            to_pay_amount:share,
-            })
-            if(partialTransactionError) throw partialTransactionError;
-        }
-        const { error } = await supabase
-        .from('Group_partial_transactions')
-        .update({ 
-            to_pay_amount:share-req.amount,
+    for (const userId of req.splitAmong) {
+       // if(userId!==req.paidById){
+        const { error:partialTransactionError } = await supabase
+        .from('Group_transactions')
+        .insert({ 
+        transaction_id: transactionData.id,
+        user_id: userId, 
+        to_pay_amount:share,
+        to_pay_id:req.paidById,
         })
-        .eq('user_id',req.paidById)
-        .eq('transaction_id', transactionData.id);
-
-        if(error) throw error;
+        if(partialTransactionError) throw partialTransactionError;
+       // }
     }
+    if(error) throw error;
+    
 };
 
 export const deleteGroupTransactionService = async(transaction,userData) => {
     const tid=transaction.id;
     const groupId=transaction.group_id;
+    const payer=transaction.created_by;
+    const amount=transaction.amount;
+
 
     console.log(userData);
     
-    if(!userData||userData.length===0){
-        // Fetch all group members
-        const { data: members, error: membersError } = await supabase
-            .from("Group_members")
-            .select("user_id, net_balance")
-            .eq("group_id", groupId);
-
-        if (membersError) throw membersError;
-
-        const splitAmount = transaction.amount / members.length;
-
-        for (const member of members) {
-            let rollback = splitAmount;
-
-            // payer had extra deduction earlier
-            if (member.user_id === transaction.created_by) {
-                rollback = splitAmount - transaction.amount;
-            }
-
-            const { error: updateError } = await supabase
-                .from("Group_members")
-                .update({
-                    net_balance: member.net_balance + rollback,
-                })
-                .eq("user_id", member.user_id)
-                .eq("group_id", groupId);
-
-            if (updateError) throw updateError;
-        }
-        return;
-    }
     for (const row of userData){
         const {user_id,to_pay_amount} = row;
+        const add = to_pay_amount;
         const { data: memberRow, error: fetchError } = await supabase
             .from("Group_members")
             .select("net_balance")
@@ -167,12 +134,28 @@ export const deleteGroupTransactionService = async(transaction,userData) => {
         const { error: updateError } = await supabase
         .from("Group_members")
         .update({
-            net_balance: memberRow.net_balance + to_pay_amount,
+            net_balance: memberRow.net_balance + add,
         })
         .eq("user_id", user_id)
         .eq("group_id", groupId);
         if (updateError) throw updateError;
     }
+    const { data: memberRow, error: fetchError } = await supabase
+    .from("Group_members")
+    .select("net_balance")
+    .eq("user_id", payer)
+    .eq("group_id", groupId)
+    .single();
+
+    if (fetchError) throw fetchError;
+    const { error: updateError } = await supabase
+    .from("Group_members")
+    .update({
+        net_balance: memberRow.net_balance - amount,
+    })
+    .eq("user_id", payer)
+    .eq("group_id", groupId);
+    if (updateError) throw updateError;
 };
 
 export const getGroupTransactionService = async(groupId)=>{

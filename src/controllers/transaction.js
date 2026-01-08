@@ -52,7 +52,7 @@ class TransactionController{
         try{
             const tid=req.params.tid;
             const {data:userData,error:groupTransactionError} = await supabase
-            .from('Group_partial_transactions')
+            .from('Group_transactions')
             .delete()
             .eq('transaction_id',tid)
             .select();
