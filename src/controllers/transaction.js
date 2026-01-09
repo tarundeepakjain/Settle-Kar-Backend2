@@ -4,7 +4,8 @@ import {
     deleteFromTransactionService,
     addGroupTransactionService,
     deleteGroupTransactionService,
-    getGroupTransactionService
+    getGroupTransactionService,
+    getUserGroupBalancesService,
 } from "../services/transaction.js"
 import { supabase } from "../utils/supabaseClient.js";
 class TransactionController{
@@ -52,7 +53,7 @@ class TransactionController{
         try{
             const tid=req.params.tid;
             const {data:userData,error:groupTransactionError} = await supabase
-            .from('Group_partial_transactions')
+            .from('Group_transactions')
             .delete()
             .eq('transaction_id',tid)
             .select();
@@ -85,6 +86,19 @@ class TransactionController{
             });
         }catch(error){
             next(error)
+        }
+    };
+    getUserGroupBalances = async(req,res,next)=>{
+        try{
+            const groupId=req.params.groupId;
+            const userId=req.user.id;
+            const data = await getUserGroupBalancesService(groupId,userId);
+            return res.status(200).json({
+                success:true,
+                balances:data.balances,
+            })
+        }catch(error){
+            next(error);
         }
     };
 }

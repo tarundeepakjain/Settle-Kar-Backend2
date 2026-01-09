@@ -11,4 +11,5 @@ router.get("/get-transactions",Authentication,TransactionController.getTransacti
 router.delete("/delete-transaction/:tid",Authentication,TransactionController.deleteTransaction);
 router.get("/get-group/:groupId",Authentication,TransactionController.getGroupTransaction);
 router.get("/scan",scan.scanBill);
+router.get("/get-my-balances/:groupId",Authentication,TransactionController.getUserGroupBalances);
 export default router;
