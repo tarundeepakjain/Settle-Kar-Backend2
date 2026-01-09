@@ -40,6 +40,7 @@ export const addGroupTransactionService = async(req,groupId,groupSize)=>{
     if (!isUUID(req.paidById)) {
   throw new Error(`Invalid paidById: ${req.paidById}`);
 }
+  
     const {data:transactionData,error:transactionError} = await supabase
     .from('Transactions')
     .insert({
@@ -53,8 +54,7 @@ export const addGroupTransactionService = async(req,groupId,groupSize)=>{
     .single();
    req.splitAmong = req.splitAmong
   .filter(id => isUUID(id));
-  console.log("Split among",req.splitAmong);
-  console.log("Payer id:",req.paidById);
+
     if(transactionError) throw transactionError;
     const share = Number((req.amount / req.splitAmong.length).toFixed(2));
 

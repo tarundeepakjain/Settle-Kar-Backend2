@@ -191,6 +191,7 @@ fetchGroup = async (req, res, next) => {
         group_name,
         description,
         invite_id,
+        is_active,
         created_by,
         created_at,
         Group_members (
@@ -216,6 +217,108 @@ fetchGroup = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+leaveGroup=async(req,res,next)=>{
+  try {
+    const user_id=req.user.id;
+    const {group_id}=req.body;
+    const {data,error}=await supabase
+    .from("Group_members")
+    .select("role")
+    .eq("group_id",group_id)
+    .eq("user_id",user_id)
+    .single();
+    if(error) throw error;
+    if(data.role==="admin"){
+      return res.status(400).json({
+        message:"Admin cannot leave group"
+      })
+    }
+    const {error:err}=await supabase
+    .from("Group_members")
+    .delete()
+    .eq("group_id",group_id)
+    .eq("user_id",user_id)
+   
+
+    if(err) throw err;
+    return res.status(200).json({
+      message:"User leaved from grp"
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+removeMember=async(req,res,next)=>{
+  try {
+    const admin_id=req.user.id;
+    const {group_id,user_id}=req.body;
+    const {data,error}=await supabase
+    .from("Group_members")
+    .select("role")
+    .eq("group_id",group_id)
+    .eq("user_id",admin_id)
+    .single();
+    if(error) throw error;
+    if(data.role!=="admin"){
+      return res.status(401).json({
+        message:"only admin can remove members"
+      })
+    }
+    const {error:err}=await supabase
+    .from("Group_members")
+    .delete()
+    .eq("group_id",group_id)
+    .eq("user_id",user_id);
+    if(err) throw err;
+    return res.status(200).json({
+      message:"User removed from grp"
+    })
+  } catch (error) {
+    next(error);
+  }
+};
+
+changeActivestatus=async(req,res,next)=>{
+try {
+  const user_id=req.user.id;
+  const {group_id}=req.body;
+  const {data,error}=await supabase
+  .from("Group_members")
+  .select("role")
+  .eq("group_id",group_id)
+  .eq("user_id",user_id)
+  .single();
+   if(error) throw error;
+    if(data.role!=="admin"){
+      return res.status(401).json({
+        message:"only admin can change group active status"
+      })
+    }
+
+   const { data: group, error: groupError } = await supabase
+      .from("Groups")
+      .select("is_active")
+      .eq("id", group_id)
+      .single();
+
+    if (groupError) throw groupError;
+
+    const { error: updateError } = await supabase
+      .from("Groups")
+      .update({ is_active: !group.is_active })
+      .eq("id", group_id);
+
+    if (updateError) throw updateError;
+   return res.status(200).json({
+    message:"Group active status changed"
+   })
+} catch (error) {
+  next(error);
+}
 };
 
    };
