@@ -38,8 +38,7 @@ class TransactionController {
       }
       const expense = await addGroupTransactionService(
         req.body,
-        groupId,
-        groupSize
+        groupId
       );
       res.status(201).json({ message: "Group Expense Added." }, expense);
     } catch (error) {

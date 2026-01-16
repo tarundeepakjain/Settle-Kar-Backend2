@@ -1,7 +1,9 @@
 import {createWorker} from "tesseract.js";
 import {GoogleGenAI} from '@google/genai';
 import { supabase } from "../utils/supabaseClient.js";
-import { addPersonalTransactionService } from "./transaction.js";
+import { addPersonalTransactionService,
+  addGroupTransactionService
+ } from "./transaction.js";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -105,7 +107,21 @@ export const uploadBillService = async ({ file, user_id },groupId) => {
   const organisedTxt = await organizeScannedBill(txt);
 
   if(groupId){
-    //Will make group transaction working after frontend 
+    const { data, error } = await supabase
+    .from('Group_members')
+    .select('user_id')
+    .eq('group_id',groupId);
+    const splitAmong = data.map(item => item.user_id);
+    try{
+      await addGroupTransactionService({
+        desc:organisedTxt.description,
+        paidById:user_id,
+        amount:organisedTxt.amount,
+        splitAmong:splitAmong,
+      },groupId);
+    }catch(error){
+      throw error;
+    }
   }else{
     try{
         await addPersonalTransactionService({

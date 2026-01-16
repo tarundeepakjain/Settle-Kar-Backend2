@@ -36,7 +36,7 @@ export const deleteFromTransactionService = async(tid) =>{
     return data[0];
 };
 
-export const addGroupTransactionService = async(req,groupId,groupSize)=>{
+export const addGroupTransactionService = async(req,groupId)=>{
     if (!isUUID(req.paidById)) {
   throw new Error(`Invalid paidById: ${req.paidById}`);
 }
